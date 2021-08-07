@@ -1,5 +1,4 @@
-#ifndef VEC_H
-#define VEC_H
+#pragma once
 
 #include <stddef.h>
 
@@ -20,11 +19,8 @@ Vec *vec_init_with_capacity_and_free(size_t capacity, void (*free)(void *ptr));
 
 void *vec_get(const Vec *vec, size_t index);
 
-/* TODO: error handling */
-void vec_push_back(Vec *vec, void *elem);
+int vec_push_back(Vec *vec, void *elem);
 
 /* Frees `vec`, and all the elements in it with `free`
  */
 void vec_deinit(Vec *vec);
-
-#endif

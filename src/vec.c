@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -50,8 +51,7 @@ void *vec_get(const Vec *vec, size_t index) {
     return vec->elems[index];
 }
 
-/* TODO: error handling */
-static void vec_realloc_if_needed(Vec *vec, size_t elems) {
+static int vec_realloc_if_needed(Vec *vec, size_t elems) {
     assert(vec->len <= vec->capacity);
 
     size_t new_capacity = vec->capacity;
@@ -63,16 +63,27 @@ static void vec_realloc_if_needed(Vec *vec, size_t elems) {
         new_capacity *= 2;
 
     if (new_capacity > vec->capacity) {
-        vec->elems = realloc(vec->elems, sizeof *vec->elems * new_capacity);
+        typeof(vec->elems) new_mem = realloc(vec->elems, sizeof *vec->elems * new_capacity);
+        if (new_mem == NULL)
+            return ENOMEM;
+
+        vec->elems = new_mem;
         vec->capacity = new_capacity;
     }
+
+    return 0;
 }
 
-void vec_push_back(Vec *vec, void *elem) {
+int vec_push_back(Vec *vec, void *elem) {
     assert(vec != NULL);
 
-    vec_realloc_if_needed(vec, 1);
+    int err = vec_realloc_if_needed(vec, 1);
+    if (err != 0)
+        return err;
+
     vec->elems[vec->len++] = elem;
+
+    return 0;
 }
 
 void vec_deinit(Vec *vec) {
