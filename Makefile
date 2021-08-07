@@ -1,10 +1,10 @@
 TARGET_EXEC := bench
 
 CC := cc
-CFLAGS := -std=c11
+CFLAGS := -std=gnu11
 CFLAGS += -Og -march=native
 CFLAGS += -ggdb
-CFLAGS += -Wall -Wextra -Wconversion -Wpedantic
+CFLAGS += -Wall -Wextra -Wconversion
 CFLAGS += -MMD -MP
 LDFLAGS := -ldl
 
