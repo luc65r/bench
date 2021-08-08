@@ -12,12 +12,12 @@ SRC_DIR = src
 BUILD_DIR = build
 
 SRCS = $(shell find $(SRC_DIR) -name *.c)
-OBJS = $(SRCS:%=$(BUILD_DIR)/%.o)
+OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 DEPS = $(OBJS:.o=.d)
 
 all: $(BUILD_DIR)/$(TARGET_EXEC)
 
-$(BUILD_DIR)/%.c.o: %.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) -c $< -o $@ $(CFLAGS)
 
