@@ -10,6 +10,7 @@
       devShell = pkgs.mkShell {
         nativeBuildInputs = with pkgs; [
           gdb
+          rustc
         ];
       };
     });
