@@ -20,6 +20,7 @@
 struct filter_data {
     Vec *functions;
     regex_t *re;
+    void *handle;
 };
 
 struct fn_infos {
@@ -44,7 +45,8 @@ static int filter_sym(const Elf64_Sym *sym, const char *strtab, void *data) {
         return ENOMEM;
 
     fni->name = name;
-    fni->addr = (uint64_t (*)(uint64_t))sym->st_value;
+    /* TODO: find someting more efficient than calling dlsym */
+    fni->addr = dlsym(d->handle, name);
 
     err = vec_push_back(d->functions, fni);
     if (err != 0)
@@ -72,6 +74,7 @@ void bench(char **files, regex_t *re) {
         struct filter_data filter_data = {
             .functions = functions,
             .re = re,
+            .handle = handle,
         };
 
         err = elf_retrieve_symbols(lm->l_ld, &filter_sym, &filter_data);
