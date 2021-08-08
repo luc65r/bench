@@ -8,12 +8,12 @@ CFLAGS += -Wall -Wextra -Wconversion
 CFLAGS += -MMD -MP
 LDFLAGS := -ldl
 
-SRC_DIR = src
-BUILD_DIR = build
+SRC_DIR := src
+BUILD_DIR := build
 
-SRCS = $(shell find $(SRC_DIR) -name *.c)
-OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
-DEPS = $(OBJS:.o=.d)
+SRCS := $(shell find $(SRC_DIR) -name *.c)
+OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+DEPS := $(OBJS:.o=.d)
 
 all: $(BUILD_DIR)/$(TARGET_EXEC)
 
