@@ -15,6 +15,7 @@
 #include "bench.h"
 #include "elf.h"
 #include "util.h"
+#include "timer.h"
 #include "vec.h"
 
 struct filter_data {
@@ -25,7 +26,7 @@ struct filter_data {
 
 struct fn_infos {
     const char *name;
-    uint64_t (*addr)(uint64_t n);
+    void (*addr)(uint64_t n);
 };
 
 static int filter_sym(const Elf64_Sym *sym, const char *strtab, void *data) {
@@ -55,6 +56,16 @@ static int filter_sym(const Elf64_Sym *sym, const char *strtab, void *data) {
     return 0;
 }
 
+#define NB_RUNS 100
+static uint64_t avg_cpu_cycles(void (*fn)(uint64_t), uint64_t n) {
+    uint64_t cycles = 0;
+    for (size_t i = 0; i < NB_RUNS; i++) {
+        cycles += count_cpu_cycles(fn, n);
+    }
+
+    return cycles / NB_RUNS;
+}
+
 void bench(char **files, regex_t *re) {
     Vec *functions = vec_init();
     assert(functions != NULL);
@@ -69,7 +80,7 @@ void bench(char **files, regex_t *re) {
         if (err != 0)
             error(1, 0, "error while getting shared library informations: %s", dlerror());
 
-        printf("name: %s\n", lm->l_name);
+        printf("library: %s\n", lm->l_name);
 
         struct filter_data filter_data = {
             .functions = functions,
@@ -84,6 +95,7 @@ void bench(char **files, regex_t *re) {
 
     for (size_t i = 0; i < functions->len; i++) {
         struct fn_infos *fni = vec_get(functions, i);
-        printf("%s\n", fni->name);
+        printf("function: %s\n", fni->name);
+        printf("%" PRIu64 "\n", avg_cpu_cycles(fni->addr, 20));
     }
 }
