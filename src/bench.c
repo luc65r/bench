@@ -19,12 +19,14 @@
 #include "vec.h"
 
 struct filter_data {
+    const char *library_name;
     Vec *functions;
     regex_t *re;
     void *handle;
 };
 
 struct fn_infos {
+    const char *library;
     const char *name;
     void (*addr)(uint64_t n);
 };
@@ -48,6 +50,7 @@ static int filter_sym(const Elf64_Sym *sym, const char *strtab, void *data) {
     fni->name = name;
     /* TODO: find someting more efficient than calling dlsym */
     fni->addr = dlsym(d->handle, name);
+    fni->library = d->library_name;
 
     err = vec_push_back(d->functions, fni);
     if (err != 0)
@@ -56,17 +59,16 @@ static int filter_sym(const Elf64_Sym *sym, const char *strtab, void *data) {
     return 0;
 }
 
-#define NB_RUNS 100
-static uint64_t avg_cpu_cycles(void (*fn)(uint64_t), uint64_t n) {
+static uint64_t avg_cpu_cycles(size_t runs, void (*fn)(uint64_t), uint64_t n) {
     uint64_t cycles = 0;
-    for (size_t i = 0; i < NB_RUNS; i++) {
+    for (size_t i = 0; i < runs; i++) {
         cycles += count_cpu_cycles(fn, n);
     }
 
-    return cycles / NB_RUNS;
+    return cycles / runs;
 }
 
-void bench(char **files, regex_t *re) {
+void bench(char **files, BenchSettings *settings) {
     Vec *functions = vec_init();
     assert(functions != NULL);
 
@@ -80,11 +82,10 @@ void bench(char **files, regex_t *re) {
         if (err != 0)
             error(1, 0, "error while getting shared library informations: %s", dlerror());
 
-        printf("library: %s\n", lm->l_name);
-
         struct filter_data filter_data = {
+            .library_name = lm->l_name,
             .functions = functions,
-            .re = re,
+            .re = settings->re,
             .handle = handle,
         };
 
@@ -95,7 +96,9 @@ void bench(char **files, regex_t *re) {
 
     for (size_t i = 0; i < functions->len; i++) {
         struct fn_infos *fni = vec_get(functions, i);
-        printf("function: %s\n", fni->name);
-        printf("%" PRIu64 "\n", avg_cpu_cycles(fni->addr, 20));
+        printf("%s: %s\n", fni->library, fni->name);
+        printf("    %" PRIu64 "\n", avg_cpu_cycles(settings->runs, fni->addr, settings->fn_arg));
     }
+
+    vec_deinit(functions);
 }
